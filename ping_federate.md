@@ -1,3 +1,44 @@
+
+Now the diagram should render correctly. The Employee ID federation strategy is one of the most robust approaches for enterprise SSO because:
+
+## Key Benefits in Practice
+
+**Operational Stability**: Employee IDs don't change when:
+- People get married (name changes)
+- Email addresses are reorganized  
+- Usernames are modified
+- Departments are restructured
+
+**Cross-System Consistency**: The same Employee ID works across:
+- Payroll systems
+- Badge access systems
+- Active Directory
+- Salesforce
+- Other enterprise applications
+
+**Audit Trail**: Easy to trace authentication events back to specific employees through HR records
+
+## Real-World Implementation Tips
+
+**Data Loading Strategy**:
+```sql
+-- Bulk update existing users with Employee IDs
+UPDATE User SET FederationIdentifier = EmployeeID__c 
+WHERE EmployeeID__c != null AND FederationIdentifier = null
+```
+
+**PingFederate Attribute Transformation**:
+- Ensure Employee ID format consistency (leading zeros, prefixes)
+- Handle edge cases like contractors or temporary workers
+- Map additional HR attributes for JIT provisioning
+
+**Monitoring & Troubleshooting**:
+- Set up alerts for authentication failures due to missing Federation IDs
+- Regular audits to ensure Employee ID sync between HR → AD → Salesforce
+- Test user lifecycle scenarios (onboarding, transfers, terminations)
+
+This approach solves the classic enterprise SSO challenge of maintaining stable user identity across multiple systems while supporting organizational changes over time.
+
 ```mermaid
 sequenceDiagram
     participant HR as 🏢 HR System
