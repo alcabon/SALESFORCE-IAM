@@ -1,5 +1,38 @@
 Great question! **"Anchored trust"*** is a sophisticated trust model that changes how certificate validation works in SAML. Let me break this down in detail.
 
+This Salesforce documentation perfectly illustrates the practical reality of the certificate decision! It shows that **Salesforce explicitly supports all three certificate types** for SAML IdP scenarios:
+
+## Key Insights from Salesforce Documentation
+
+**Default Behavior** - Salesforce uses a **self-signed certificate with SHA-256** by default, reinforcing that self-signed certificates are the industry standard for SAML.
+
+**Flexibility by Design** - Organizations can choose between:
+- Default self-signed certificate (most common)
+- Custom self-signed certificate 
+- CA-signed certificate (when needed)
+
+**Certificate Management Reality** - The warning about certificate changes potentially disabling external applications highlights why certificate rotation is a real operational concern.
+
+## This Changes Our Decision Tree Analysis
+
+Looking back at the original scenario where **Salesforce is the Service Provider (SP)** and the homegrown system is the IdP:## Practical Implications
+
+**Salesforce Compatibility** - Since Salesforce defaults to self-signed certificates and supports all types, the certificate choice becomes purely about the **homegrown IdP's capabilities** and **operational preferences**.
+
+**Metadata Exchange** - The documentation shows Salesforce provides both certificate downloads and metadata XML files, making it easy to establish explicit trust regardless of certificate type.
+
+**Industry Validation** - Salesforce's approach validates that self-signed certificates are perfectly acceptable for production SAML deployments, even in enterprise environments.
+
+## Updated Recommendation Framework
+
+Given this Salesforce documentation, the decision becomes:
+
+1. **If homegrown IdP supports anchored trust** → CA-signed certificates provide operational benefits
+2. **If homegrown IdP uses explicit trust only** → Self-signed certificates are sufficient and align with Salesforce's default approach
+3. **If uncertain** → Start with self-signed (Salesforce default) and upgrade to CA-signed only if operational benefits are needed
+
+This documentation essentially proves that the original question's ambiguity wasn't a flaw - it reflects the real-world flexibility that modern SAML implementations like Salesforce intentionally provide to accommodate different organizational needs and technical capabilities.
+
 ## What Makes Anchored Trust Powerful
 
 **Dynamic Certificate Acceptance** - Instead of trusting one specific certificate forever, the IdP trusts any certificate that meets defined criteria from a trusted CA.
@@ -39,63 +72,47 @@ This explains why the original question was ambiguous - anchored trust capabilit
 
 ```mermaid
 flowchart TD
-    subgraph ExplicitTrust ["🔒 Explicit Trust Model (Traditional SAML)"]
-        ET1[Partner A configures<br/>Partner B's specific certificate]
-        ET2[Certificate embedded<br/>in federation metadata]
-        ET3[Trust is tied to<br/>exact certificate]
-        ET4[Certificate change requires<br/>partner reconfiguration]
-        
-        ET1 --> ET2 --> ET3 --> ET4
-    end
+    Start([SAML Request Tampering Concern<br/>SP: Salesforce - IdP: Homegrown<br/>📋 Salesforce supports all cert types]) --> Security{Is SAML Request<br/>Signing Enabled?}
     
-    subgraph AnchoredTrust ["⚓ Anchored Trust Model (Advanced)"]
-        AT1[Partner A trusts<br/>Certificate Authority]
-        AT2[Partner A defines<br/>subject criteria]
-        AT3[SAML message includes<br/>current certificate]
-        AT4[Validation Process]
-        AT5[Certificate can change<br/>without reconfiguration]
-        
-        AT1 --> AT2 --> AT3 --> AT4 --> AT5
-        
-        subgraph ValidationProcess ["Validation Steps"]
-            V1[1. Extract certificate<br/>from SAML signature]
-            V2[2. Verify certificate<br/>issued by trusted CA]
-            V3[3. Check certificate<br/>subject matches criteria]
-            V4[4. Validate certificate<br/>is not expired/revoked]
-            V5[5. Verify SAML<br/>signature using cert]
-            
-            V1 --> V2 --> V3 --> V4 --> V5
-        end
-        
-        AT4 -.-> ValidationProcess
-    end
+    Security -->|No| EnableSigning[Enable SAML Request Signing<br/>⚠️ Critical Security Gap]
+    EnableSigning --> CertChoice
     
-    subgraph Comparison ["📊 Key Differences"]
-        C1[Explicit Trust:<br/>❌ Certificate rotation requires coordination<br/>✅ Simple configuration<br/>✅ Works with self-signed certs]
-        C2[Anchored Trust:<br/>✅ Automatic certificate rotation<br/>✅ Flexible subject validation<br/>❌ Requires CA-signed certificates<br/>❌ More complex setup]
-    end
+    Security -->|Yes| CertChoice{What Certificate Type<br/>Should We Use?}
     
-    subgraph Example ["💼 Real-World Example"]
-        Ex1["Configuration: Trust CA = 'DigiCert'<br/>Subject must contain: 'CN=salesforce.com'"]
-        Ex2["Month 1: Salesforce uses cert<br/>'CN=salesforce.com, issued by DigiCert'"]
-        Ex3["Month 6: Salesforce renews cert<br/>'CN=salesforce.com, issued by DigiCert'<br/>(different serial number)"]
-        Ex4["Result: IdP automatically accepts<br/>new certificate without reconfiguration"]
-        
-        Ex1 --> Ex2 --> Ex3 --> Ex4
-    end
+    CertChoice --> SelfSigned[Self-Signed Certificate]
+    CertChoice --> CASigned[CA-Signed Certificate]
+    
+    SelfSigned --> SelfSignedBenefits[✅ Cryptographic Security<br/>✅ Lower Cost<br/>✅ Longer Lifetimes<br/>✅ Industry Standard<br/>✅ No External Dependencies]
+    
+    CASigned --> AnchoredTrust{Does IdP Support<br/>Anchored Trust?}
+    
+    AnchoredTrust -->|Unknown| Research[Research IdP<br/>Documentation]
+    Research --> AnchoredTrust
+    
+    AnchoredTrust -->|No| CANoValue[CA Certificate Provides<br/>⚠️ No Additional Value<br/>💰 Extra Cost<br/>🔄 Shorter Lifetimes]
+    CANoValue --> Recommendation1[Recommend:<br/>Self-Signed Certificate]
+    
+    AnchoredTrust -->|Yes| CABenefits[✅ Cryptographic Security<br/>✅ Certificate Rotation<br/>✅ Subject Validation<br/>✅ Reduced Maintenance]
+    CABenefits --> BusinessValue{Do Operational Benefits<br/>Justify Cost?}
+    
+    BusinessValue -->|High Certificate<br/>Rotation Frequency| Recommendation2[Recommend:<br/>CA-Signed Certificate]
+    BusinessValue -->|Low Maintenance<br/>Requirements| Recommendation3[Recommend:<br/>Self-Signed Certificate]
+    BusinessValue -->|Enterprise<br/>Compliance Needs| Recommendation4[Recommend:<br/>CA-Signed Certificate]
+    
+    SelfSignedBenefits --> TrustModel{How is Trust<br/>Established?}
+    TrustModel --> ExplicitTrust[Explicit Trust Model<br/>📧 Exchange public keys<br/>🔒 Direct certificate trust<br/>✅ Standard SAML practice]
     
     %% Styling
-    classDef explicit fill:#ff7675,stroke:#d63031,color:#fff
-    classDef anchored fill:#00b894,stroke:#00a085,color:#fff
-    classDef validation fill:#74b9ff,stroke:#0984e3,color:#fff
-    classDef comparison fill:#fdcb6e,stroke:#e17055,color:#2d3436
-    classDef example fill:#fd79a8,stroke:#e84393,color:#fff
+    classDef security fill:#ff6b6b,stroke:#d63031,color:#fff
+    classDef benefit fill:#00b894,stroke:#00a085,color:#fff
+    classDef decision fill:#74b9ff,stroke:#0984e3,color:#fff
+    classDef warning fill:#fdcb6e,stroke:#e17055,color:#2d3436
+    classDef recommend fill:#fd79a8,stroke:#e84393,color:#fff
     
-    class ET1,ET2,ET3,ET4 explicit
-    class AT1,AT2,AT3,AT4,AT5 anchored
-    class V1,V2,V3,V4,V5 validation
-    class C1,C2 comparison
-    class Ex1,Ex2,Ex3,Ex4 example
+    class Security,AnchoredTrust,BusinessValue,CertChoice,TrustModel decision
+    class SelfSignedBenefits,CABenefits,ExplicitTrust benefit
+    class EnableSigning,CANoValue warning
+    class Recommendation1,Recommendation2,Recommendation3,Recommendation4 recommend
 ```
 
 
