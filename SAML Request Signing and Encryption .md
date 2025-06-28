@@ -1,5 +1,50 @@
 Great question! **"Anchored trust"*** is a sophisticated trust model that changes how certificate validation works in SAML. Let me break this down in detail.
 
+Exactly! Let me clarify these three certificate options:
+
+## 1. Default Self-Signed Certificate (Most Common)
+- **What it is**: Salesforce automatically generates this when you enable IdP functionality
+- **Characteristics**: 
+  - Uses SHA-256 signature algorithm
+  - Created and managed entirely by Salesforce
+  - No user action required
+  - Salesforce controls the subject, validity period, etc.
+
+## 2. Custom Self-Signed Certificate (You Create)
+- **What it is**: You use Salesforce's certificate generation tool to create your own self-signed certificate
+- **Why you might want this**:
+  - **Custom subject information** (your organization name, specific CN, etc.)
+  - **Longer validity periods** (reduce maintenance frequency)
+  - **Specific key sizes** or algorithms
+  - **Compliance requirements** that need specific certificate attributes
+  - **Branding/organizational consistency**
+
+**Process**: Use Salesforce's "Generate a Self-Signed Certificate" feature where you specify:
+- Certificate label/name
+- Unique name
+- Key size (2048-bit recommended)
+- Validity period
+- Subject information (Organization, Country, etc.)
+
+## 3. CA-Signed Certificate (When Needed)
+- **What it is**: Certificate issued by an external Certificate Authority
+- **Process**: 
+  - Generate a Certificate Signing Request (CSR) in Salesforce
+  - Submit CSR to your chosen CA (DigiCert, Verisign, etc.)
+  - Import the signed certificate back into Salesforce
+- **When needed**: 
+  - Anchored trust scenarios
+  - Corporate policies requiring CA validation
+  - Integration with systems that don't support self-signed certificates
+
+## Practical Decision Framework
+
+**Start with Default** → **Upgrade to Custom Self-Signed** → **Move to CA-Signed only if required**
+
+The custom self-signed option gives you the best of both worlds: complete control over certificate attributes without the complexity and cost of CA involvement. Most organizations that move away from the default certificate choose custom self-signed rather than jumping straight to CA-signed certificates.
+
+This three-tier approach shows Salesforce's practical understanding that different organizations have different operational maturity levels and security requirements!
+
 This Salesforce documentation perfectly illustrates the practical reality of the certificate decision! It shows that **Salesforce explicitly supports all three certificate types** for SAML IdP scenarios:
 
 ## Key Insights from Salesforce Documentation
